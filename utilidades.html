@@ -82,36 +82,40 @@
   </div>
 
   <script>
+    // ID extraído de tu enlace original de Google Sheets
+    const SHEET_ID = "1OTKD17f-iY5b4thL4ENXJ5wLk6UoTxuECKjeoCHqYv45E6INGr3";
+    
+    // Conexión directa con la API de visualización de Google pidiendo únicamente la columna A (SELECT A)
+    const URL_DIRECTA = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tq=SELECT%20A`;
+
     async function cargarProyectos() {
       const dropdown = document.getElementById('lista-proyectos');
       
       try {
-        // Enlace base pidiendo solo la columna A
-        const baseLink = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR6pQGRTm3RObnz_GwDciQa6iID1OTKD17f-iY5b4thL4ENXJ5wLk6UoTxuECKjeoCHqYv45E6INGr3/pub?gid=505829821&single=true&output=csv&range=A:A";
+        const respuesta = await fetch(URL_DIRECTA);
+        if (!respuesta.ok) throw new Error("Error al conectar con Google Sheets");
         
-        // TRUCO: Agregamos la hora exacta en milisegundos para romper la caché del navegador y del proxy
-        const cacheBuster = "&_cb=" + new Date().getTime();
-        const linkConCambio = baseLink + cacheBuster;
+        const textoOriginal = await respuesta.text();
         
-        // Unimos al proxy
-        const urlFinal = "https://api.allorigins.win/raw?url=" + encodeURIComponent(linkConCambio);
-
-        const respuesta = await fetch(urlFinal);
-        if (!respuesta.ok) throw new Error("Error de red");
+        // Limpiamos el texto para extraer el JSON puro que envía Google
+        const inicioJson = textoOriginal.indexOf('{');
+        const finJson = textoOriginal.lastIndexOf('}') + 1;
+        const jsonTexto = textoOriginal.substring(inicioJson, finJson);
         
-        const texto = await respuesta.text();
-        const filas = texto.split(/\r?\n/);
+        const objetoData = JSON.parse(jsonTexto);
+        const filas = objetoData.table.rows;
         
-        // Filtramos y nos quedamos solo con la columna A limpia
-        const proyectos = filas.slice(1).map(fila => {
-          return fila.replace(/^"|"$/g, '').trim();
-        }).filter(proyecto => proyecto !== "");
+        // Mapeamos las celdas ignorando los renglones vacíos y la fila 0 (el título)
+        const proyectos = filas.slice(1)
+          .map(row => (row.c && row.c[0]) ? row.c[0].v : null)
+          .filter(p => p !== null && String(p).trim() !== "");
 
         if (proyectos.length === 0) {
-          dropdown.innerHTML = '<option>No se encontraron proyectos</option>';
+          dropdown.innerHTML = '<option>No se encontraron proyectos activos</option>';
           return;
         }
 
+        // Activamos y llenamos el menú desplegable
         dropdown.disabled = false;
         dropdown.innerHTML = '<option value="">-- Seleccione un proyecto --</option>';
 
@@ -123,7 +127,7 @@
         });
 
       } catch (error) {
-        console.error(error);
+        console.error("Error técnico:", error);
         dropdown.innerHTML = '<option>Error al conectar con la base de datos</option>';
       }
     }
