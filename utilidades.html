@@ -82,40 +82,25 @@
   </div>
 
   <script>
-    // ID extraído de tu enlace original de Google Sheets
-    const SHEET_ID = "1OTKD17f-iY5b4thL4ENXJ5wLk6UoTxuECKjeoCHqYv45E6INGr3";
-    
-    // Conexión directa con la API de visualización de Google pidiendo únicamente la columna A (SELECT A)
-    const URL_DIRECTA = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tq=SELECT%20A`;
+    // PEGA AQUÍ TU URL DE GOOGLE APPS SCRIPT (Reemplaza este enlace de ejemplo de abajo)
+    const URL_MI_API = "https://script.google.com/macros/s/AKfycbxR7gSHLNmydu5jCerUkCcLeDYnfnuiZOLEufbuJh_Z2Kquy5IOkgJEnAJwVX3otKIKdw/exec";
 
     async function cargarProyectos() {
       const dropdown = document.getElementById('lista-proyectos');
       
       try {
-        const respuesta = await fetch(URL_DIRECTA);
-        if (!respuesta.ok) throw new Error("Error al conectar con Google Sheets");
+        const respuesta = await fetch(URL_MI_API);
+        if (!respuesta.ok) throw new Error("Error al consultar la API.");
         
-        const textoOriginal = await respuesta.text();
-        
-        // Limpiamos el texto para extraer el JSON puro que envía Google
-        const inicioJson = textoOriginal.indexOf('{');
-        const finJson = textoOriginal.lastIndexOf('}') + 1;
-        const jsonTexto = textoOriginal.substring(inicioJson, finJson);
-        
-        const objetoData = JSON.parse(jsonTexto);
-        const filas = objetoData.table.rows;
-        
-        // Mapeamos las celdas ignorando los renglones vacíos y la fila 0 (el título)
-        const proyectos = filas.slice(1)
-          .map(row => (row.c && row.c[0]) ? row.c[0].v : null)
-          .filter(p => p !== null && String(p).trim() !== "");
+        // Formateamos directamente la respuesta como la lista de proyectos limpia
+        const proyectos = await respuesta.json();
 
         if (proyectos.length === 0) {
-          dropdown.innerHTML = '<option>No se encontraron proyectos activos</option>';
+          dropdown.innerHTML = '<option>No hay proyectos activos registrados</option>';
           return;
         }
 
-        // Activamos y llenamos el menú desplegable
+        // Habilitamos el menú desplegable corporativo
         dropdown.disabled = false;
         dropdown.innerHTML = '<option value="">-- Seleccione un proyecto --</option>';
 
@@ -127,8 +112,8 @@
         });
 
       } catch (error) {
-        console.error("Error técnico:", error);
-        dropdown.innerHTML = '<option>Error al conectar con la base de datos</option>';
+        console.error("Detalle de la conexión:", error);
+        dropdown.innerHTML = '<option>Error de sincronización</option>';
       }
     }
 
