@@ -82,27 +82,29 @@
   </div>
 
   <script>
-    // Tu enlace CSV original
-    const LINK_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR6pQGRTm3RObnz_GwDciQa6iID1OTKD17f-iY5b4thL4ENXJ5wLk6UoTxuECKjeoCHqYv45E6INGr3/pub?gid=505829821&single=true&output=csv";
-    const URL_FINAL = "https://api.allorigins.win/raw?url=" + encodeURIComponent(LINK_CSV);
-
     async function cargarProyectos() {
       const dropdown = document.getElementById('lista-proyectos');
       
       try {
-        const respuesta = await fetch(URL_FINAL);
+        // Enlace base pidiendo solo la columna A
+        const baseLink = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR6pQGRTm3RObnz_GwDciQa6iID1OTKD17f-iY5b4thL4ENXJ5wLk6UoTxuECKjeoCHqYv45E6INGr3/pub?gid=505829821&single=true&output=csv&range=A:A";
+        
+        // TRUCO: Agregamos la hora exacta en milisegundos para romper la caché del navegador y del proxy
+        const cacheBuster = "&_cb=" + new Date().getTime();
+        const linkConCambio = baseLink + cacheBuster;
+        
+        // Unimos al proxy
+        const urlFinal = "https://api.allorigins.win/raw?url=" + encodeURIComponent(linkConCambio);
+
+        const respuesta = await fetch(urlFinal);
         if (!respuesta.ok) throw new Error("Error de red");
         
         const texto = await respuesta.text();
         const filas = texto.split(/\r?\n/);
         
-        // Cortamos el encabezado (fila 0) y filtramos
+        // Filtramos y nos quedamos solo con la columna A limpia
         const proyectos = filas.slice(1).map(fila => {
-          // TRUCO: Cortamos la fila en la primera coma para quedarnos SOLO con la columna A
-          let primeraColumna = fila.split(',')[0];
-          
-          // Limpiamos comillas dobles que Google Sheets añade automáticamente al exportar CSV
-          return primeraColumna.replace(/^"|"$/g, '').trim();
+          return fila.replace(/^"|"$/g, '').trim();
         }).filter(proyecto => proyecto !== "");
 
         if (proyectos.length === 0) {
