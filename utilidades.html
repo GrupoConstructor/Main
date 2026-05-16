@@ -72,7 +72,7 @@
 
   <div class="card-container">
     <div class="logo-container">
-      <img src="logo.png" alt="Grupo Constructor">
+      <img src="logo_constructor.jpg" alt="Grupo Constructor">
     </div>
 
     <label for="lista-proyectos">Selecciona un proyecto activo:</label>
@@ -82,25 +82,38 @@
   </div>
 
   <script>
-    // PEGA AQUÍ TU URL DE GOOGLE APPS SCRIPT (Reemplaza este enlace de ejemplo de abajo)
-    const URL_MI_API = "https://script.google.com/macros/s/AKfycbxR7gSHLNmydu5jCerUkCcLeDYnfnuiZOLEufbuJh_Z2Kquy5IOkgJEnAJwVX3otKIKdw/exec";
+    // Extraemos el ID real de tu hoja de cálculo de Google
+    const SHEET_ID = "1OTKD17f-iY5b4thL4ENXJ5wLk6UoTxuECKjeoCHqYv45E6INGr3";
+    const GID = "505829821";
+    
+    // TRUCO MAESTRO: Endpoint nativo de Google que descarga en texto limpio saltándose los proxies
+    const URL_DIRECTA = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GID}`;
 
     async function cargarProyectos() {
       const dropdown = document.getElementById('lista-proyectos');
       
       try {
-        const respuesta = await fetch(URL_MI_API);
-        if (!respuesta.ok) throw new Error("Error al consultar la API.");
+        const respuesta = await fetch(URL_DIRECTA);
+        if (!respuesta.ok) throw new Error("Error en servidor");
         
-        // Formateamos directamente la respuesta como la lista de proyectos limpia
-        const proyectos = await respuesta.json();
+        const texto = await respuesta.text();
+        const filas = texto.split(/\r?\n/);
+        
+        // Procesamos fila por fila ignorando el título de la celda A1
+        const proyectos = filas.slice(1).map(fila => {
+          // Cortamos estrictamente en la primera coma para asegurar la Columna A
+          let primeraColumna = fila.split(',')[0];
+          
+          // Eliminamos las comillas envolventes que inserta Google Sheets por defecto
+          return primeraColumna.replace(/^"|"$/g, '').trim();
+        }).filter(proyecto => proyecto !== "");
 
         if (proyectos.length === 0) {
-          dropdown.innerHTML = '<option>No hay proyectos activos registrados</option>';
+          dropdown.innerHTML = '<option>No se encontraron proyectos activos</option>';
           return;
         }
 
-        // Habilitamos el menú desplegable corporativo
+        // Activamos y estructuramos las opciones del dropdown
         dropdown.disabled = false;
         dropdown.innerHTML = '<option value="">-- Seleccione un proyecto --</option>';
 
@@ -112,8 +125,8 @@
         });
 
       } catch (error) {
-        console.error("Detalle de la conexión:", error);
-        dropdown.innerHTML = '<option>Error de sincronización</option>';
+        console.error("Falla:", error);
+        dropdown.innerHTML = '<option>Error al conectar con la base de datos</option>';
       }
     }
 
