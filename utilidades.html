@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Carga de Utilidades - Grupo Constructor</title>
   <style>
+    /* Configuración General */
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background-color: #f4f6f9;
@@ -13,64 +14,96 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      min-height: 90vh;
+      min-height: 100vh;
     }
+
+    /* Tarjeta Principal */
     .card-container {
       background-color: #ffffff;
-      border-radius: 8px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-      border-top: 5px solid #e65c00; /* Naranja Constructor */
-      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      border-top: 6px solid #e65c00; /* Naranja Constructor */
+      padding: 35px;
       width: 100%;
-      max-width: 400px;
+      max-width: 420px;
       box-sizing: border-box;
       text-align: center;
     }
+
+    /* Logo */
     .logo-container {
-      margin-bottom: 25px;
+      margin-bottom: 20px;
       display: flex;
       justify-content: center;
-      align-items: center;
     }
     .logo-container img {
       max-width: 100%;
       height: auto;
-      max-height: 75px;
+      max-height: 85px;
     }
+
     h2 {
-      font-size: 1.4rem;
+      font-size: 1.5rem;
       color: #0b2e59; /* Azul Constructor */
-      margin: 0 0 20px 0;
+      margin: 0 0 25px 0;
       font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
-    label {
-      display: block;
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: #555;
-      margin-bottom: 12px;
+
+    /* Contenedor de cada campo de formulario */
+    .form-group {
+      margin-bottom: 20px;
       text-align: left;
     }
-    select {
+
+    label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #444;
+      margin-bottom: 8px;
+    }
+
+    /* Estilo común para Selects e Inputs */
+    select, input[type="date"] {
       width: 100%;
       padding: 12px 15px;
       font-size: 1rem;
       color: #333;
-      background-color: #ffffff;
-      border: 2px solid #dcdcdc;
-      border-radius: 6px;
+      background-color: #fdfdfd;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
       outline: none;
-      cursor: pointer;
+      transition: all 0.3s ease;
+      box-sizing: border-box;
+      font-family: inherit;
+    }
+
+    select:focus, input[type="date"]:focus {
+      border-color: #0b2e59;
+      background-color: #fff;
+      box-shadow: 0 0 8px rgba(11, 46, 89, 0.1);
+    }
+
+    /* Estilo específico para dropdowns (flecha personalizada) */
+    select {
       appearance: none;
+      cursor: pointer;
       background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%230b2e59' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
       background-repeat: no-repeat;
       background-position: right 12px center;
       background-size: 16px;
     }
+
     select:disabled {
       background-color: #f5f5f5;
-      color: #888;
+      color: #999;
       cursor: not-allowed;
+    }
+
+    @media (max-width: 480px) {
+      .card-container { padding: 25px; }
     }
   </style>
 </head>
@@ -83,30 +116,48 @@
     
     <h2>Carga de Utilidades</h2>
 
-    <label for="lista-proyectos">Selecciona un proyecto activo:</label>
-    <select id="lista-proyectos" disabled>
-      <option>Cargando proyectos...</option>
-    </select>
+    <div class="form-group">
+      <label for="lista-proyectos">Proyecto:</label>
+      <select id="lista-proyectos" disabled>
+        <option>Cargando proyectos...</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="fecha-registro">Fecha de Registro:</label>
+      <input type="date" id="fecha-registro">
+    </div>
+
+    <div class="form-group">
+      <label for="lista-persona">Persona:</label>
+      <select id="lista-persona">
+        <option value="">-- Seleccione Persona --</option>
+        <option value="Gabriel">Gabriel</option>
+        <option value="Junior">Junior</option>
+      </select>
+    </div>
+
   </div>
 
   <script>
-    // Configuración con tus parámetros reales del enlace provisto
+    // Configuración de tu Google Sheet
     const SHEET_ID = "1GO4Bry8sY5K5KUuK7vef7XIR_KgpwiJqaQBDVw3zRpk";
     const GID = "505829821";
     
-    // Consulta limpia pidiendo únicamente los textos de la Columna A
     const URL_DIRECTA = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tq=SELECT%20A&gid=${GID}`;
 
+    // 1. Cargar fecha actual por defecto en el campo de fecha
+    document.getElementById('fecha-registro').valueAsDate = new Date();
+
+    // 2. Función para cargar proyectos desde Google Sheets
     async function cargarProyectos() {
       const dropdown = document.getElementById('lista-proyectos');
       
       try {
         const respuesta = await fetch(URL_DIRECTA);
-        if (!respuesta.ok) throw new Error("Error al acceder a la hoja");
+        if (!respuesta.ok) throw new Error("Error de conexión");
         
         const textoObtenido = await respuesta.text();
-        
-        // Expresión regular para extraer de forma segura los textos de las celdas ("v":"Nombre")
         const expresionRegular = /"v":"([^"]+)"/g;
         let coincidencia;
         const proyectos = [];
@@ -118,19 +169,16 @@
           }
         }
 
-        // Removemos el título o encabezado de la columna (A1) para que no salga en la lista
-        if (proyectos.length > 0) {
-          proyectos.shift();
-        }
+        // Saltamos el encabezado A1
+        if (proyectos.length > 0) proyectos.shift();
 
         if (proyectos.length === 0) {
-          dropdown.innerHTML = '<option>No se encontraron proyectos en la columna A</option>';
+          dropdown.innerHTML = '<option>No hay proyectos activos</option>';
           return;
         }
 
-        // Activamos y estructuramos las opciones del menú desplegable corporativo
         dropdown.disabled = false;
-        dropdown.innerHTML = '<option value="">-- Seleccione un proyecto --</option>';
+        dropdown.innerHTML = '<option value="">-- Seleccione Proyecto --</option>';
 
         proyectos.forEach(proyecto => {
           const opcion = document.createElement('option');
@@ -140,12 +188,11 @@
         });
 
       } catch (error) {
-        console.error("Detalle técnico:", error);
-        dropdown.innerHTML = '<option>Error al conectar con la base de datos</option>';
+        console.error(error);
+        dropdown.innerHTML = '<option>Error al cargar base de datos</option>';
       }
     }
 
-    // Inicializamos la carga al abrir el sitio
     cargarProyectos();
   </script>
 </body>
