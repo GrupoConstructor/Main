@@ -90,10 +90,11 @@
   </div>
 
   <script>
-    const SHEET_ID = "1OTKD17f-iY5b4thL4ENXJ5wLk6UoTxuECKjeoCHqYv45E6INGr3";
+    // Configuración con tus parámetros reales del enlace provisto
+    const SHEET_ID = "1GO4Bry8sY5K5KUuK7vef7XIR_KgpwiJqaQBDVw3zRpk";
     const GID = "505829821";
     
-    // Conexión limpia pidiendo estrictamente la columna A
+    // Consulta limpia pidiendo únicamente los textos de la Columna A
     const URL_DIRECTA = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tq=SELECT%20A&gid=${GID}`;
 
     async function cargarProyectos() {
@@ -101,35 +102,33 @@
       
       try {
         const respuesta = await fetch(URL_DIRECTA);
-        if (!respuesta.ok) throw new Error("Error de red");
+        if (!respuesta.ok) throw new Error("Error al acceder a la hoja");
         
         const textoObtenido = await respuesta.text();
         
-        // Buscamos todos los textos que estén dentro de las propiedades de celda "v":"Nombre" de Google
+        // Expresión regular para extraer de forma segura los textos de las celdas ("v":"Nombre")
         const expresionRegular = /"v":"([^"]+)"/g;
         let coincidencia;
         const proyectos = [];
         
         while ((coincidencia = expresionRegular.exec(textoObtenido)) !== null) {
           let nombreProyecto = coincidencia[1].trim();
-          // Evitamos meter el título de la columna A si es que coincide
           if (nombreProyecto !== "" && !proyectos.includes(nombreProyecto)) {
             proyectos.push(nombreProyecto);
           }
         }
 
-        // Si el primer elemento es el encabezado de tu columna, lo quitamos
+        // Removemos el título o encabezado de la columna (A1) para que no salga en la lista
         if (proyectos.length > 0) {
-          // Nota: Si el dropdown te llega a comer tu primer proyecto real, borra la línea de abajo
-          proyectos.shift(); 
+          proyectos.shift();
         }
 
         if (proyectos.length === 0) {
-          dropdown.innerHTML = '<option>No se encontraron proyectos activos</option>';
+          dropdown.innerHTML = '<option>No se encontraron proyectos en la columna A</option>';
           return;
         }
 
-        // Activamos y llenamos el menú desplegable
+        // Activamos y estructuramos las opciones del menú desplegable corporativo
         dropdown.disabled = false;
         dropdown.innerHTML = '<option value="">-- Seleccione un proyecto --</option>';
 
@@ -141,11 +140,12 @@
         });
 
       } catch (error) {
-        console.error(error);
+        console.error("Detalle técnico:", error);
         dropdown.innerHTML = '<option>Error al conectar con la base de datos</option>';
       }
     }
 
+    // Inicializamos la carga al abrir el sitio
     cargarProyectos();
   </script>
 </body>
