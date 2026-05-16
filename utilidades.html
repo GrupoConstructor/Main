@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Selector de Proyectos - Grupo Constructor</title>
+  <title>Carga de Utilidades - Grupo Constructor</title>
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -37,11 +37,17 @@
       height: auto;
       max-height: 75px;
     }
+    h2 {
+      font-size: 1.4rem;
+      color: #0b2e59; /* Azul Constructor */
+      margin: 0 0 20px 0;
+      font-weight: 700;
+    }
     label {
       display: block;
       font-size: 0.95rem;
       font-weight: 600;
-      color: #0b2e59; /* Azul Constructor */
+      color: #555;
       margin-bottom: 12px;
       text-align: left;
     }
@@ -74,6 +80,8 @@
     <div class="logo-container">
       <img src="logo_constructor.jpg" alt="Grupo Constructor">
     </div>
+    
+    <h2>Carga de Utilidades</h2>
 
     <label for="lista-proyectos">Selecciona un proyecto activo:</label>
     <select id="lista-proyectos" disabled>
@@ -82,33 +90,46 @@
   </div>
 
   <script>
-    // IDs de tu documento original de Google Sheets
     const SHEET_ID = "1OTKD17f-iY5b4thL4ENXJ5wLk6UoTxuECKjeoCHqYv45E6INGr3";
     const GID = "505829821";
+    
+    // Conexión limpia pidiendo estrictamente la columna A
+    const URL_DIRECTA = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tq=SELECT%20A&gid=${GID}`;
 
-    // Función "Callback" global que procesa los datos de Google de manera directa saltándose el CORS
-    window.procesarDatosGoogle = function(datos) {
+    async function cargarProyectos() {
       const dropdown = document.getElementById('lista-proyectos');
       
       try {
-        if (!datos || !datos.table || !datos.table.rows) {
-          throw new Error("Formato inválido");
+        const respuesta = await fetch(URL_DIRECTA);
+        if (!respuesta.ok) throw new Error("Error de red");
+        
+        const textoObtenido = await respuesta.text();
+        
+        // Buscamos todos los textos que estén dentro de las propiedades de celda "v":"Nombre" de Google
+        const expresionRegular = /"v":"([^"]+)"/g;
+        let coincidencia;
+        const proyectos = [];
+        
+        while ((coincidencia = expresionRegular.exec(textoObtenido)) !== null) {
+          let nombreProyecto = coincidencia[1].trim();
+          // Evitamos meter el título de la columna A si es que coincide
+          if (nombreProyecto !== "" && !proyectos.includes(nombreProyecto)) {
+            proyectos.push(nombreProyecto);
+          }
         }
-        
-        const filas = datos.table.rows;
-        
-        // Mapeamos las celdas, saltando la fila 0 (el encabezado) e ignorando renglones vacíos
-        const proyectos = filas.slice(1).map(row => {
-          // row.c[0] representa estrictamente la Columna A de tu Google Sheet
-          return (row.c && row.c[0] && row.c[0].v) ? String(row.c[0].v).trim() : null;
-        }).filter(p => p !== null && p !== "");
+
+        // Si el primer elemento es el encabezado de tu columna, lo quitamos
+        if (proyectos.length > 0) {
+          // Nota: Si el dropdown te llega a comer tu primer proyecto real, borra la línea de abajo
+          proyectos.shift(); 
+        }
 
         if (proyectos.length === 0) {
           dropdown.innerHTML = '<option>No se encontraron proyectos activos</option>';
           return;
         }
 
-        // Activamos y llenamos el menú desplegable corporativo
+        // Activamos y llenamos el menú desplegable
         dropdown.disabled = false;
         dropdown.innerHTML = '<option value="">-- Seleccione un proyecto --</option>';
 
@@ -121,25 +142,11 @@
 
       } catch (error) {
         console.error(error);
-        dropdown.innerHTML = '<option>Error al procesar la lista</option>';
+        dropdown.innerHTML = '<option>Error al conectar con la base de datos</option>';
       }
-    };
-
-    function conectarBaseDatos() {
-      // Endpoint maestro: Solicita la columna A (SELECT A) en formato seguro JSONP
-      const urlFinal = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tq=SELECT%20A&gid=${GID}&tqx=responseHandler:procesarDatosGoogle`;
-      
-      // Creamos una etiqueta script dinámica para inyectar los datos de forma directa en tiempo real
-      const script = document.createElement('script');
-      script.src = urlFinal;
-      script.onerror = function() {
-        document.getElementById('lista-proyectos').innerHTML = '<option>Error al conectar con la base de datos</option>';
-      };
-      document.body.appendChild(script);
     }
 
-    // Ejecutamos la sincronización al cargar la web
-    conectarBaseDatos();
+    cargarProyectos();
   </script>
 </body>
 </html>
