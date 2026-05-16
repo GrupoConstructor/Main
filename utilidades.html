@@ -65,8 +65,36 @@
       margin-bottom: 8px;
     }
 
-    /* Estilo común para Selects e Inputs */
-    select, input[type="date"] {
+    /* Contenedor para los botones radiales */
+    .radio-group {
+      display: flex;
+      justify-content: space-around;
+      background-color: #f8f9fa;
+      padding: 12px;
+      border-radius: 8px;
+      border: 2px solid #e0e0e0;
+      margin-bottom: 25px;
+    }
+
+    .radio-option {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      font-weight: 600;
+      color: #333;
+      font-size: 0.95rem;
+    }
+
+    .radio-option input[type="radio"] {
+      margin-right: 8px;
+      accent-color: #e65c00;
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    /* Estilo común para Selects e Inputs (Texto, Número, Fecha) */
+    select, input[type="date"], input[type="number"] {
       width: 100%;
       padding: 12px 15px;
       font-size: 1rem;
@@ -79,121 +107,3 @@
       box-sizing: border-box;
       font-family: inherit;
     }
-
-    select:focus, input[type="date"]:focus {
-      border-color: #0b2e59;
-      background-color: #fff;
-      box-shadow: 0 0 8px rgba(11, 46, 89, 0.1);
-    }
-
-    /* Estilo específico para dropdowns (flecha personalizada) */
-    select {
-      appearance: none;
-      cursor: pointer;
-      background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%230b2e59' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 12px center;
-      background-size: 16px;
-    }
-
-    select:disabled {
-      background-color: #f5f5f5;
-      color: #999;
-      cursor: not-allowed;
-    }
-
-    @media (max-width: 480px) {
-      .card-container { padding: 25px; }
-    }
-  </style>
-</head>
-<body>
-
-  <div class="card-container">
-    <div class="logo-container">
-      <img src="logo_constructor.jpg" alt="Grupo Constructor">
-    </div>
-    
-    <h2>Carga de Utilidades</h2>
-
-    <div class="form-group">
-      <label for="lista-proyectos">Proyecto:</label>
-      <select id="lista-proyectos" disabled>
-        <option>Cargando proyectos...</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label for="fecha-registro">Fecha de Registro:</label>
-      <input type="date" id="fecha-registro">
-    </div>
-
-    <div class="form-group">
-      <label for="lista-persona">Persona:</label>
-      <select id="lista-persona">
-        <option value="">-- Seleccione Persona --</option>
-        <option value="Gabriel">Gabriel</option>
-        <option value="Junior">Junior</option>
-      </select>
-    </div>
-
-  </div>
-
-  <script>
-    // Configuración de tu Google Sheet
-    const SHEET_ID = "1GO4Bry8sY5K5KUuK7vef7XIR_KgpwiJqaQBDVw3zRpk";
-    const GID = "505829821";
-    
-    const URL_DIRECTA = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tq=SELECT%20A&gid=${GID}`;
-
-    // 1. Cargar fecha actual por defecto en el campo de fecha
-    document.getElementById('fecha-registro').valueAsDate = new Date();
-
-    // 2. Función para cargar proyectos desde Google Sheets
-    async function cargarProyectos() {
-      const dropdown = document.getElementById('lista-proyectos');
-      
-      try {
-        const respuesta = await fetch(URL_DIRECTA);
-        if (!respuesta.ok) throw new Error("Error de conexión");
-        
-        const textoObtenido = await respuesta.text();
-        const expresionRegular = /"v":"([^"]+)"/g;
-        let coincidencia;
-        const proyectos = [];
-        
-        while ((coincidencia = expresionRegular.exec(textoObtenido)) !== null) {
-          let nombreProyecto = coincidencia[1].trim();
-          if (nombreProyecto !== "" && !proyectos.includes(nombreProyecto)) {
-            proyectos.push(nombreProyecto);
-          }
-        }
-
-        // Saltamos el encabezado A1
-        if (proyectos.length > 0) proyectos.shift();
-
-        if (proyectos.length === 0) {
-          dropdown.innerHTML = '<option>No hay proyectos activos</option>';
-          return;
-        }
-
-        dropdown.disabled = false;
-        dropdown.innerHTML = '<option value="">-- Seleccione Proyecto --</option>';
-
-        proyectos.forEach(proyecto => {
-          const opcion = document.createElement('option');
-          opcion.value = proyecto;
-          opcion.textContent = proyecto;
-          dropdown.appendChild(opcion);
-        });
-
-      } catch (error) {
-        console.error(error);
-        dropdown.innerHTML = '<option>Error al cargar base de datos</option>';
-      }
-    }
-
-    cargarProyectos();
-  </script>
-</body>
-</html>
