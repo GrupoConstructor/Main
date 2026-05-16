@@ -235,7 +235,7 @@
     const SHEET_ID = "1GO4Bry8sY5K5KUuK7vef7XIR_KgpwiJqaQBDVw3zRpk";
     const GID = "505829821";
     
-    // Pon aquí tu URL de Apps Script tal cual te la da Google
+    // URL del Apps Script configurada correctamente
     const URL_RECEPTOR_GOOGLE = "https://script.google.com/macros/s/AKfycby3u0Qdfx5JhhvXdATf8VSgKNTAWqvpmJvs4J222nAIU3dEGWVFy5lOCHqcJlps-AA2/exec";
     
     const URL_DIRECTA = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tq=SELECT%20A&gid=${GID}`;
@@ -292,7 +292,6 @@
       const elPersona = document.getElementById('lista-persona');
       const elMonto = document.getElementById('monto-dinero');
 
-      // Limpiar marcas rojas previas de validación
       elProyecto.classList.remove('campo-incompleto');
       elFecha.classList.remove('campo-incompleto');
       elPersona.classList.remove('campo-incompleto');
@@ -304,7 +303,6 @@
       const fechaRegistro = elFecha.value;
       const persona = elPersona.value;
 
-      // VALIDACIÓN ESTRICTA CAMPO POR CAMPO
       let errores = [];
 
       if (!proyecto || proyecto === "") {
@@ -324,9 +322,8 @@
         errores.push("un monto válido mayor a 0");
       }
 
-      // Si hay elementos en la lista de errores, frena el envío de golpe
       if (errores.length > 0) {
-        txtEstado.style.color = "#d9534f"; // Rojo de advertencia corporativo
+        txtEstado.style.color = "#d9534f";
         txtEstado.textContent = "Falta seleccionar o ingresar: " + errores.join(', ') + ".";
         return;
       }
@@ -355,10 +352,6 @@
       };
 
       try {
-        if(URL_RECEPTOR_GOOGLE === "https://script.google.com/macros/s/AKfycby3u0Qdfx5JhhvXdATf8VSgKNTAWqvpmJvs4J222nAIU3dEGWVFy5lOCHqcJlps-AA2/exec") {
-          throw new Error("Falta configurar la URL de Apps Script.");
-        }
-
         await fetch(URL_RECEPTOR_GOOGLE, {
           method: "POST",
           mode: "no-cors",
@@ -375,7 +368,6 @@
         txtEstado.style.color = "red";
         txtEstado.textContent = "Error al conectar: " + error.message;
         
-        // Si hay error real de red, desbloquea para reintentar
         btn.disabled = false;
         btn.textContent = "Guardar";
         elProyecto.disabled = false;
